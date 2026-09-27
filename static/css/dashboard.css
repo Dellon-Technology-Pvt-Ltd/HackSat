@@ -1,0 +1,564 @@
+/* Custom Mission Control Dashboard Styles */
+:root {
+    --primary-cyan: #00bcd4;
+    --secondary-blue: #2196f3;
+    --accent-purple: #9c27b0;
+    --success-green: #4caf50;
+    --warning-yellow: #ff9800;
+    --danger-red: #f44336;
+    --dark-bg: #1a1a1a;
+    --darker-bg: #0f0f0f;
+    --border-color: #333;
+}
+
+body {
+    background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+    font-family: 'Courier New', monospace;
+    overflow: hidden; /* Prevent layout breaking */
+}
+
+/* Header animations */
+header {
+    box-shadow: 0 4px 20px rgba(0, 188, 212, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+/* Card styles */
+.bg-gray-800 {
+    background: rgba(31, 41, 55, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(51, 51, 51, 0.6);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.bg-gray-800:hover {
+    border-color: var(--primary-cyan);
+    box-shadow: 0 4px 20px rgba(0, 188, 212, 0.2);
+}
+
+/* Pulse animation for live indicator */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+    }
+}
+
+.animate-pulse {
+    animation: pulse 2s infinite;
+}
+
+/* Data value styling */
+.font-mono {
+    font-family: 'Courier New', monospace;
+    text-shadow: 0 0 5px currentColor;
+}
+
+/* Status indicators */
+.status-online {
+    color: var(--success-green);
+    text-shadow: 0 0 10px var(--success-green);
+}
+
+.status-offline {
+    color: var(--danger-red);
+    text-shadow: 0 0 10px var(--danger-red);
+}
+
+/* Progress bars */
+.progress-bar {
+    background: linear-gradient(90deg, var(--primary-cyan) 0%, var(--secondary-blue) 100%);
+    box-shadow: 0 0 10px rgba(0, 188, 212, 0.5);
+    transition: width 0.5s ease;
+}
+
+/* Alert styling */
+.alert-critical {
+    background: rgba(244, 67, 54, 0.1);
+    border-left: 3px solid var(--danger-red);
+    color: var(--danger-red);
+}
+
+.alert-warning {
+    background: rgba(255, 152, 0, 0.1);
+    border-left: 3px solid var(--warning-yellow);
+    color: var(--warning-yellow);
+}
+
+.alert-info {
+    background: rgba(33, 150, 243, 0.1);
+    border-left: 3px solid var(--secondary-blue);
+    color: var(--secondary-blue);
+}
+
+.alert-success {
+    background: rgba(76, 175, 80, 0.1);
+    border-left: 3px solid var(--success-green);
+    color: var(--success-green);
+}
+
+/* Gauge styling */
+.gauge-container {
+    position: relative;
+    width: 100%;
+    height: 120px;
+}
+
+.gauge-label {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    color: #9ca3af;
+}
+
+/* Chart container styling */
+.chart-container {
+    position: relative;
+    height: 150px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 10px;
+}
+
+/* 3D Attitude Indicator */
+#attitudeCanvas {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: radial-gradient(ellipse at center, rgba(0, 188, 212, 0.1) 0%, rgba(0, 0, 0, 0.8) 100%);
+}
+
+/* Antenna Tracking Canvas */
+#antennaCanvas {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: radial-gradient(ellipse at center, rgba(0, 188, 212, 0.1) 0%, rgba(0, 0, 0, 0.8) 100%);
+    box-shadow: 0 0 20px rgba(0, 188, 212, 0.3);
+}
+
+/* Antenna tracking values */
+#azimuth, #elevation {
+    text-shadow: 0 0 10px currentColor;
+    font-weight: bold;
+}
+
+#track-status {
+    text-shadow: 0 0 8px currentColor;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Data value colors */
+.text-cyan-400 {
+    color: var(--primary-cyan);
+    text-shadow: 0 0 8px rgba(0, 188, 212, 0.6);
+}
+
+.text-green-400 {
+    color: var(--success-green);
+    text-shadow: 0 0 8px rgba(76, 175, 80, 0.6);
+}
+
+.text-yellow-400 {
+    color: var(--warning-yellow);
+    text-shadow: 0 0 8px rgba(255, 152, 0, 0.6);
+}
+
+.text-red-400 {
+    color: var(--danger-red);
+    text-shadow: 0 0 8px rgba(244, 67, 54, 0.6);
+}
+
+.text-purple-400 {
+    color: var(--accent-purple);
+    text-shadow: 0 0 8px rgba(156, 39, 176, 0.6);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(45deg, var(--primary-cyan), var(--secondary-blue));
+    border-radius: 4px;
+    transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(45deg, var(--secondary-blue), var(--primary-cyan));
+}
+
+::-webkit-scrollbar-corner {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+/* Firefox scrollbar styling */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-cyan) rgba(0, 0, 0, 0.3);
+}
+
+/* Smooth scrolling behavior */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Panel hover effects for better UX */
+.bg-gray-800:hover {
+    border-color: var(--primary-cyan);
+    box-shadow: 0 4px 20px rgba(0, 188, 212, 0.2);
+}
+
+/* Prevent horizontal overflow in tables */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure content doesn't overflow */
+.content-wrapper {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Main Dashboard */
+main {
+    height: calc(100vh - 4rem); /* Subtract header height */
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 1rem;
+    padding: 1rem;
+    min-height: 100%;
+}
+
+/* Panel scrolling */
+.panel-scrollable {
+    max-height: calc(100vh - 8rem);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Left panel specific scrolling */
+.left-panel {
+    max-height: calc(100vh - 6rem);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Right panel specific scrolling */
+.right-panel {
+    max-height: calc(100vh - 6rem);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Center panel scrolling */
+.center-panel {
+    max-height: calc(100vh - 6rem);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Alert panel scrolling */
+.alerts-panel {
+    max-height: 8rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Chart container scrolling */
+.charts-container {
+    height: 220px !important; /* Fixed height to stop stretching */
+    overflow-y: hidden; /* Prevent vertical scrolling */
+    overflow-x: hidden;
+    scrollbar-width: none; /* Hide scrollbar */
+}
+
+/* Responsive compass */
+#directionCanvas {
+    max-width: 100%;
+    height: auto;
+}
+
+#antennaCanvas {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+    .grid-cols-12 {
+        grid-template-columns: repeat(6, 1fr);
+    }
+    
+    .col-span-3 {
+        grid-column: span 6;
+    }
+    
+    .col-span-6 {
+        grid-column: span 6;
+    }
+}
+
+/* Loading animation */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading {
+    animation: spin 1s linear infinite;
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* Glitch effect for critical alerts */
+@keyframes glitch {
+    0%, 100% {
+        text-shadow: 2px 0 red, -2px 0 cyan;
+        transform: translate(0);
+    }
+    25% {
+        text-shadow: -2px 0 red, 2px 0 cyan;
+        transform: translate(-2px, 2px);
+    }
+    50% {
+        text-shadow: 2px 0 cyan, -2px 0 red;
+        transform: translate(2px, -2px);
+    }
+    75% {
+        text-shadow: -2px 0 cyan, 2px 0 red;
+        transform: translate(-2px, -2px);
+    }
+}
+
+.glitch {
+    animation: glitch 0.3s infinite;
+}
+
+/* Additional styles for the professional dashboard */
+.bg-gray-700 {
+    background: rgba(55, 65, 81, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(75, 85, 99, 0.6);
+}
+
+.bg-gray-900 {
+    background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+}
+
+/* Enhanced button styles */
+.btn-gradient {
+    background: linear-gradient(45deg, var(--primary-cyan), var(--secondary-blue));
+    transition: all 0.3s ease;
+}
+
+.btn-gradient:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 188, 212, 0.3);
+}
+
+/* Enhanced data display */
+.data-value {
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    transition: all 0.2s ease;
+}
+
+.data-value:hover {
+    transform: scale(1.05);
+}
+
+/* Panel header enhancements */
+.panel-header {
+    border-bottom: 2px solid var(--primary-cyan);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+/* Status indicator enhancements */
+.status-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+}
+
+.status-indicator.online {
+    background: var(--success-green);
+    box-shadow: 0 0 10px var(--success-green);
+}
+
+.status-indicator.offline {
+    background: var(--danger-red);
+    box-shadow: 0 0 10px var(--danger-red);
+}
+
+/* Enhanced chart styling */
+canvas {
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* Professional grid layout */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 1rem;
+    padding: 1rem;
+    min-height: 100%;
+}
+
+.col-span-3 {
+    grid-column: span 3;
+}
+
+.col-span-6 {
+    grid-column: span 6;
+}
+
+/* Enhanced typography */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* Enhanced spacing */
+.space-y-2 > * + * {
+    margin-top: 0.5rem;
+}
+
+.space-y-3 > * + * {
+    margin-top: 0.75rem;
+}
+
+.space-y-4 > * + * {
+    margin-top: 1rem;
+}
+
+/* Enhanced transitions */
+.transition-all {
+    transition: all 0.3s ease;
+}
+
+.transform {
+    transition: transform 0.3s ease;
+}
+
+.hover\:scale-105:hover {
+    transform: scale(1.05);
+}
+
+/* Professional color scheme */
+.text-cyan-400 {
+    color: #22d3ee;
+}
+
+.text-green-400 {
+    color: #4ade80;
+}
+
+.text-yellow-400 {
+    color: #facc15;
+}
+
+.text-red-400 {
+    color: #f87171;
+}
+
+.text-purple-400 {
+    color: #c084fc;
+}
+
+.text-orange-400 {
+    color: #fb923c;
+}
+
+.text-blue-400 {
+    color: #60a5fa;
+}
+
+.text-indigo-400 {
+    color: #818cf8;
+}
+
+/* Enhanced background colors */
+.bg-gray-800 {
+    background: rgba(31, 41, 55, 0.9);
+}
+
+.bg-gray-700 {
+    background: rgba(55, 65, 81, 0.9);
+}
+
+/* Enhanced borders */
+.border-gray-700 {
+    border-color: rgba(75, 85, 99, 0.6);
+}
+
+.border-cyan-500 {
+    border-color: rgba(6, 182, 212, 0.6);
+}
+
+/* Enhanced shadows */
+.shadow-lg {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Enhanced animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+/* Enhanced responsive design */
+@media (max-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .col-span-3,
+    .col-span-6 {
+        grid-column: span 1;
+    }
+}

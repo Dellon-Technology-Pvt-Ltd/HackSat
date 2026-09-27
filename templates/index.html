@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Ground Station Control - v4.0</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="{{ url_for('static', filename='css/dashboard.css') }}" rel="stylesheet">
+</head>
+<body class="bg-gray-900 text-white overflow-hidden">
+    <!-- Header -->
+    <header class="bg-gray-800 border-b border-cyan-500 px-6 py-3">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <i class="fas fa-satellite text-cyan-400 text-2xl"></i>
+                <div class="flex flex-col">
+                    <h1 class="text-2xl font-bold text-red-400">HACKSAT GROUND STATION</h1>
+                    <span class="text-xs text-cyan-400">Target Spacecraft: AgniSat</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                    <span class="text-green-400 text-sm">LIVE</span>
+                </div>
+            </div>
+            <!-- Amynasec Logo -->
+            <div class="flex items-center">
+                <img src="{{ url_for('static', filename='images/AmynasecLogo.png') }}" 
+                     alt="Amynasec Logo" 
+                     class="h-10 w-auto object-contain">
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dashboard -->
+    <main class="dashboard-grid">
+        
+        <!-- Left Panel - System Status -->
+        <div class="col-span-3 space-y-4 left-panel">
+            <!-- Command & Data Handling -->
+            <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                <h3 class="text-cyan-400 font-bold mb-3 flex items-center">
+                    <i class="fas fa-microchip mr-2"></i>COMMAND & DATA
+                </h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">APID:</span>
+                        <span id="apid" class="font-mono text-cyan-400">--</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Sequence Count:</span>
+                        <span id="seq-count" class="font-mono text-green-400">--</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Mission Uptime:</span>
+                        <span id="uptime" class="font-mono text-green-400">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Housekeeping -->
+            <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                <h3 class="text-cyan-400 font-bold mb-3 flex items-center">
+                    <i class="fas fa-home mr-2"></i>HOUSEKEEPING
+                </h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Temperature:</span>
+                        <span id="temp" class="font-mono text-yellow-400">--</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Humidity:</span>
+                        <span id="humidity" class="font-mono text-blue-400">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADCS Status -->
+            <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                <h3 class="text-cyan-400 font-bold mb-3 flex items-center">
+                    <i class="fas fa-compass mr-2"></i>ADCS (IMU)
+                </h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Mode:</span>
+                        <span id="adcs-mode" class="font-mono text-purple-400">--</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Roll:</span>
+                        <span id="roll" class="font-mono text-orange-400">--</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Pitch:</span>
+                        <span id="pitch" class="font-mono text-orange-400">--</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Relative Yaw:</span>
+                        <span id="yaw" class="font-mono text-orange-400">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Status -->
+            <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                <h3 class="text-cyan-400 font-bold mb-3 flex items-center">
+                    <i class="fas fa-map-marked-alt mr-2"></i>NAVIGATION
+                </h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Orbit:</span>
+                        <span id="orbit" class="font-mono text-indigo-400">--</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Altitude:</span>
+                        <span id="altitude" class="font-mono text-green-400">--</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Speed:</span>
+                        <span id="speed" class="font-mono text-green-400">--</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Satellites:</span>
+                        <span id="sat-count" class="font-mono text-blue-400">--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center Panel - Main Visualization -->
+        <div class="col-span-6 space-y-4 center-panel">
+            <!-- Ground Station Antenna Control -->
+            <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                <h3 class="text-cyan-400 font-bold mb-3">GROUND STATION ANTENNA CONTROL</h3>
+                <div class="grid grid-cols-3 gap-4">
+                    <!-- 2D Antenna Tracking Visualization -->
+                    <div class="col-span-2 bg-gray-700 rounded-lg p-4">
+                        <h4 class="text-cyan-400 text-sm font-bold mb-2">ANTENNA TRACKING</h4>
+                        <div class="relative h-40 flex items-center justify-center">
+                            <canvas id="antennaCanvas" width="350" height="150"></canvas>
+                        </div>
+                        <div class="grid grid-cols-4 gap-2 text-center mt-2">
+                            <div>
+                                <div class="text-xs text-gray-400">AZIMUTH</div>
+                                <div id="azimuth" class="text-sm font-mono text-cyan-400 font-bold">--°</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-gray-400">ELEVATION</div>
+                                <div id="elevation" class="text-sm font-mono text-cyan-400 font-bold">--°</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-gray-400">OFFSET</div>
+                                <div id="pointing-offset" class="text-sm font-mono text-orange-400 font-bold">--°</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-gray-400">STATUS</div>
+                                <div id="track-status" class="text-sm font-mono text-green-400 font-bold">ACQUIRING</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Direction Indicator -->
+                    <div class="bg-gray-700 rounded-lg p-4">
+                        <h4 class="text-cyan-400 text-sm font-bold mb-2">DIRECTION</h4>
+                        <div class="relative h-32 flex items-center justify-center">
+                            <canvas id="directionCanvas" width="140" height="140"></canvas>
+                        </div>
+                        <div class="text-center mt-2">
+                            <span id="direction-text" class="text-lg font-mono text-cyan-400 font-bold">WEST-SW</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Status Information Row -->
+                <div class="grid grid-cols-4 gap-3 mt-4">
+                    <!-- Current Status -->
+                    <div class="bg-gray-700 rounded-lg p-3">
+                        <h4 class="text-cyan-400 text-xs font-bold mb-1">STATUS</h4>
+                        <div class="space-y-1 text-xs">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Mode:</span>
+                                <span id="current-mode" class="font-mono text-green-400">ACTIVE</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">State:</span>
+                                <span id="current-state" class="font-mono text-blue-400">TRACKING</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Target:</span>
+                                <span id="target-sat" class="font-mono text-purple-400">SAT-001</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Antenna Information -->
+                    <div class="bg-gray-700 rounded-lg p-3">
+                        <h4 class="text-cyan-400 text-xs font-bold mb-1">ANTENNA</h4>
+                        <div class="space-y-1 text-xs">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Type:</span>
+                                <span id="antenna-type" class="font-mono text-orange-400">HIGH-GAIN MONOPOLE</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Freq:</span>
+                                <span id="antenna-freq" class="font-mono text-red-400">433 MHz</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Gain:</span>
+                                <span id="antenna-gain" class="font-mono text-green-400">3.6 dBi</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Signal Quality -->
+                    <div class="bg-gray-700 rounded-lg p-3">
+                        <h4 class="text-cyan-400 text-xs font-bold mb-1">SIGNAL</h4>
+                        <div class="space-y-1 text-xs">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Strength:</span>
+                                <span id="signal-strength" class="font-mono text-green-400">-65 dBm</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">SNR:</span>
+                                <span id="signal-snr" class="font-mono text-blue-400">25 dB</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Link:</span>
+                                <span id="link-quality" class="font-mono text-green-400">98%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Power & Data -->
+                    <div class="bg-gray-700 rounded-lg p-3">
+                        <h4 class="text-cyan-400 text-xs font-bold mb-1">SYSTEM</h4>
+                        <div class="space-y-1 text-xs">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Power:</span>
+                                <span id="antenna-power" class="font-mono text-yellow-400">125 W</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Data:</span>
+                                <span id="data-rate" class="font-mono text-purple-400">9600 bps</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">BER:</span>
+                                <span id="signal-ber" class="font-mono text-yellow-400">1e-6</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sensor Gauges -->
+            <div class="grid grid-cols-3 gap-4">
+                <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                    <h4 class="text-cyan-400 text-sm font-bold mb-2">ACCELEROMETER</h4>
+                    <div class="space-y-1 text-xs">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">X:</span>
+                            <span id="acc-x" class="font-mono text-red-400">--</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Y:</span>
+                            <span id="acc-y" class="font-mono text-green-400">--</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Z:</span>
+                            <span id="acc-z" class="font-mono text-blue-400">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                    <h4 class="text-cyan-400 text-sm font-bold mb-2">GYROSCOPE</h4>
+                    <div class="space-y-1 text-xs">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">X:</span>
+                            <span id="gyro-x" class="font-mono text-red-400">--</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Y:</span>
+                            <span id="gyro-y" class="font-mono text-green-400">--</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Z:</span>
+                            <span id="gyro-z" class="font-mono text-blue-400">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                    <h4 class="text-cyan-400 text-sm font-bold mb-2">POSITION</h4>
+                    <div class="space-y-1 text-xs">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Lat:</span>
+                            <span id="latitude" class="font-mono text-yellow-400">--</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Lon:</span>
+                            <span id="longitude" class="font-mono text-yellow-400">--</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">HDOP:</span>
+                            <span id="hdop" class="font-mono text-purple-400">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Telemetry Charts -->
+            <div class="bg-gray-800 rounded-lg p-4 border border-gray-700 charts-container">
+                <h3 class="text-cyan-400 font-bold mb-3">TELEMETRY HISTORY</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <canvas id="tempChart" height="120"></canvas>
+                    </div>
+                    <div>
+                        <canvas id="radChart" height="120"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel - Payload & Status -->
+        <div class="col-span-3 space-y-4 right-panel">
+            <!-- Payload Status -->
+            <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                <h3 class="text-cyan-400 font-bold mb-3 flex items-center">
+                    <i class="fas fa-radiation mr-2"></i>PAYLOAD
+                </h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Radiation:</span>
+                        <span id="radiation" class="font-mono text-red-400">--</span>
+                    </div>
+                    <div class="w-full bg-gray-700 rounded-full h-2">
+                        <div id="radiation-bar" class="bg-red-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Communication Status -->
+            <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                <h3 class="text-cyan-400 font-bold mb-3 flex items-center">
+                    <i class="fas fa-satellite-dish mr-2"></i>COMMUNICATION
+                </h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Link Status:</span>
+                        <span id="link-status" class="text-green-400">CONNECTED</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Data Rate:</span>
+                        <span class="text-green-400">9600 bps</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Last Update:</span>
+                        <span id="last-update" class="text-cyan-400 font-mono">--</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Connections:</span>
+                        <span id="connections" class="text-green-400 font-mono">0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Disconnections:</span>
+                        <span id="disconnections" class="text-red-400 font-mono">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Health -->
+            <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                <h3 class="text-cyan-400 font-bold mb-3 flex items-center">
+                    <i class="fas fa-heartbeat mr-2"></i>SYSTEM HEALTH
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-gray-400 text-sm">Power System</span>
+                        <div class="w-24 bg-gray-700 rounded-full h-2">
+                            <div class="bg-green-500 h-2 rounded-full" style="width: 85%"></div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-gray-400 text-sm">Thermal System</span>
+                        <div class="w-24 bg-gray-700 rounded-full h-2">
+                            <div class="bg-yellow-500 h-2 rounded-full" style="width: 70%"></div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-gray-400 text-sm">ADCS System</span>
+                        <div class="w-24 bg-gray-700 rounded-full h-2">
+                            <div class="bg-blue-500 h-2 rounded-full" style="width: 90%"></div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-gray-400 text-sm">Payload System</span>
+                        <div class="w-24 bg-gray-700 rounded-full h-2">
+                            <div class="bg-purple-500 h-2 rounded-full" style="width: 95%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+<!-- Telecommand Panel -->
+<div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+    <h3 class="text-cyan-400 font-bold mb-3 flex items-center">
+        <i class="fas fa-upload mr-2"></i>TELECOMMAND
+    </h3>
+
+    <div class="space-y-2 text-sm">
+
+        <div>
+            <label class="text-gray-400">Target Spacecraft</label>
+            <input id="tc-satid"
+                   class="w-full bg-gray-600 text-cyan-400 rounded p-1 mt-1 font-mono"
+                   value="AgniSat"
+                   readonly
+                   style="cursor: not-allowed;">
+        </div>
+
+        <div>
+            <label class="text-gray-400">ADCS Mode</label>
+            <select id="tc-adcs"
+                    class="w-full bg-gray-700 text-white rounded p-1 mt-1">
+                <option>NOMINAL</option>
+                <option>SAFE</option>
+                <option>DETUMBLE</option>
+                <option>PAYLOAD OPS</option>
+            </select>
+        </div>
+
+        <!-- ADCS Attitude Commands (Placeholders) -->
+        <div class="border-t border-gray-600 pt-2 mt-2">
+            <label class="text-gray-400 text-xs font-bold">ADCS ATTITUDE (TARGET)</label>
+            <div class="grid grid-cols-3 gap-1 mt-1">
+                <div>
+                    <label class="text-gray-500 text-xs">Target Roll</label>
+                    <input id="tc-roll"
+                           class="w-full bg-gray-700 text-white rounded p-1 text-xs"
+                           placeholder="0.0"
+                           type="number"
+                           step="0.1">
+                </div>
+                <div>
+                    <label class="text-gray-500 text-xs">Target Pitch</label>
+                    <input id="tc-pitch"
+                           class="w-full bg-gray-700 text-white rounded p-1 text-xs"
+                           placeholder="0.0"
+                           type="number"
+                           step="0.1">
+                </div>
+                <div>
+                    <label class="text-gray-500 text-xs">Target Relative Yaw</label>
+                    <input id="tc-yaw"
+                           class="w-full bg-gray-700 text-white rounded p-1 text-xs"
+                           placeholder="0.0"
+                           type="number"
+                           step="0.1">
+                </div>
+            </div>
+        </div>
+
+        <!-- Target Attitude Display (Shows commanded target values) -->
+        <div class="border-t border-gray-600 pt-2 mt-2">
+            <label class="text-gray-400 text-xs font-bold">COMMANDED TARGETS</label>
+            <div class="grid grid-cols-3 gap-1 mt-1">
+                <div>
+                    <label class="text-gray-500 text-xs">Cmd Roll</label>
+                    <div id="target-roll-display"
+                         class="w-full bg-gray-800 text-yellow-400 rounded p-1 text-xs font-mono">
+                        --
+                    </div>
+                </div>
+                <div>
+                    <label class="text-gray-500 text-xs">Cmd Pitch</label>
+                    <div id="target-pitch-display"
+                         class="w-full bg-gray-800 text-yellow-400 rounded p-1 text-xs font-mono">
+                        --
+                    </div>
+                </div>
+                <div>
+                    <label class="text-gray-500 text-xs">Cmd Relative Yaw</label>
+                    <div id="target-yaw-display"
+                         class="w-full bg-gray-800 text-yellow-400 rounded p-1 text-xs font-mono">
+                        --
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Attitude Display -->
+        <div class="border-t border-gray-600 pt-2 mt-2">
+            <label class="text-gray-400 text-xs font-bold">CURRENT ATTITUDE</label>
+            <div class="grid grid-cols-3 gap-1 mt-1">
+                <div>
+                    <label class="text-gray-500 text-xs">Current Roll</label>
+                    <div id="current-roll"
+                         class="w-full bg-gray-800 text-cyan-400 rounded p-1 text-xs font-mono">
+                        0.0°
+                    </div>
+                </div>
+                <div>
+                    <label class="text-gray-500 text-xs">Current Pitch</label>
+                    <div id="current-pitch"
+                         class="w-full bg-gray-800 text-cyan-400 rounded p-1 text-xs font-mono">
+                        0.0°
+                    </div>
+                </div>
+                <div>
+                    <label class="text-gray-500 text-xs">Current Relative Yaw</label>
+                    <div id="current-yaw"
+                         class="w-full bg-gray-800 text-cyan-400 rounded p-1 text-xs font-mono">
+                        0.0°
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Antenna Commands (Placeholder) -->
+        <div class="border-t border-gray-600 pt-2 mt-2">
+            <label class="text-gray-400 text-xs font-bold">ANTENNA</label>
+            <div class="grid grid-cols-2 gap-1 mt-1">
+                <div>
+                    <label class="text-gray-500 text-xs">Mode</label>
+                    <select id="tc-antenna-mode"
+                            class="w-full bg-gray-700 text-white rounded p-1 text-xs">
+                        <option>AUTO</option>
+                        <option>MANUAL</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-gray-500 text-xs">Azimuth</label>
+                    <input id="tc-azimuth"
+                           class="w-full bg-gray-700 text-white rounded p-1 text-xs"
+                           placeholder="0.0"
+                           type="number"
+                           step="0.1">
+                </div>
+                <div>
+                    <label class="text-gray-500 text-xs">Elevation</label>
+                    <input id="tc-elevation"
+                           class="w-full bg-gray-700 text-white rounded p-1 text-xs"
+                           placeholder="0.0"
+                           type="number"
+                           step="0.1">
+                </div>
+            </div>
+        </div>
+
+        <!-- Communication Commands (Placeholder) -->
+        <div class="border-t border-gray-600 pt-2 mt-2">
+            <label class="text-gray-400 text-xs font-bold">COMMUNICATION</label>
+            <div class="grid grid-cols-2 gap-1 mt-1">
+                <button id="tc-connect"
+                        class="bg-green-600 hover:bg-green-700 text-white text-xs py-1 rounded">
+                    CONNECT
+                </button>
+                <button id="tc-disconnect"
+                        class="bg-red-600 hover:bg-red-700 text-white text-xs py-1 rounded">
+                    DISCONNECT
+                </button>
+            </div>
+        </div>
+
+        <button id="send-tc-btn"
+                class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 rounded mt-3">
+            SEND COMMAND
+        </button>
+
+        <div id="tc-status"
+             class="text-center text-xs text-green-400 mt-2">
+             Ready
+        </div>
+
+        <!-- Command Status Display -->
+        <div class="border-t border-gray-600 pt-2 mt-2">
+            <label class="text-gray-400 text-xs font-bold">COMMAND STATUS</label>
+            <div id="command-status-display"
+                 class="text-center text-xs text-yellow-400 font-mono mt-1">
+                IDLE
+            </div>
+        </div>
+
+        <!-- Command Log Display -->
+        <div class="border-t border-gray-600 pt-2 mt-2">
+            <label class="text-gray-400 text-xs font-bold">COMMAND LOG</label>
+            <div id="command-log-display"
+                 class="text-xs text-gray-400 font-mono mt-1 h-20 overflow-y-auto">
+                Waiting for commands...
+            </div>
+        </div>
+
+        <!-- Communication State Display -->
+        <div class="border-t border-gray-600 pt-2 mt-2">
+            <label class="text-gray-400 text-xs font-bold">LINK STATUS</label>
+            <div id="comm-state-display"
+                 class="text-center text-xs text-red-400 font-mono mt-1">
+                LOST
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+            <!-- Recovery Panel -->
+            <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                <h3 class="text-cyan-400 font-bold mb-3 flex items-center">
+                    <i class="fas fa-sync-alt mr-2"></i>RECOVERY
+                </h3>
+                <div class="space-y-2">
+                    <button id="recovery-btn" class="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-2 px-4 rounded transition-all duration-200 transform hover:scale-105">
+                        <i class="fas fa-redo mr-2"></i>RECOVER LINK
+                    </button>
+                    <div id="recovery-status" class="text-center text-sm text-gray-400">
+                        System Ready
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alerts Panel -->
+            <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                <h3 class="text-cyan-400 font-bold mb-3 flex items-center">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>SYSTEM ALERTS
+                </h3>
+                <div id="alerts" class="space-y-2 text-sm alerts-panel">
+                    <div class="text-green-400 text-xs">
+                        <i class="fas fa-check-circle mr-1"></i>All systems nominal
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}?v=2024-v6-periodic"></script>
+</body>
+</html>
