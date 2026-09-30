@@ -327,8 +327,8 @@ project/
 ## Contributing
 
 **Contributors:**
-- Arun Mane
-- Girija Deshmukh
+- [Arun Mane](https://github.com/arunm2110)
+- [Girija Deshmukh](https://github.com/Girija207)
 
 We welcome contributions from the community. Please feel free to submit pull requests, report issues, or suggest new features, enhancements, and tools.
 
@@ -338,8 +338,8 @@ We welcome contributions from the community. Please feel free to submit pull req
 
 For questions, support, or collaboration opportunities:
 
-- **Website:** Dellon.io
-- **GitHub Issues:** Submit an Issue
+- **Website:** [Dellon Technology](https://dellon.io)
+- **GitHub Issues:** [Submit an Issue](https://github.com/Dellon-Technology-Pvt-Ltd/HackSat/issues)
 
 ---
 
@@ -351,7 +351,5 @@ Future updates will be released progressively with new features and research sce
 
 ---
 
-## License
 
-© 2026 Dellon Technology pvt ltd . All rights reserved.
 
