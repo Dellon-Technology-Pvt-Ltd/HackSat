@@ -211,8 +211,8 @@ The ground station supports realistic operational telecommands following real sp
 
 ```bash
 # Clone repository
-git clone <repository-url>
-cd satellite_project_final/project
+git clone https://github.com/Dellon-Technology-Pvt-Ltd/HackSat.git
+cd HackSat
 
 # Create virtual environment
 python3 -m venv venv
