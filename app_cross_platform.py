@@ -271,10 +271,16 @@ def handle_disconnect():
 @socketio.on('request_telemetry')
 def handle_telemetry_request():
     """Handle telemetry status request"""
-    if serial_reader and serial_reader.last_packet_time:
-        time_since_last = time.time() - serial_reader.last_packet_time
-        if time_since_last < 5:
+    global modbus_control, serial_reader
+    if modbus_control:
+        # Use shared status calculation
+        connection_status = modbus_control.calculate_connection_status(
+            serial_reader.last_packet_time if serial_reader else None
+        )
+        if connection_status == 'CONNECTED':
             socketio.emit('status', {'connected': True, 'message': 'LIVE'})
+        elif connection_status == 'NO_DATA':
+            socketio.emit('status', {'connected': False, 'message': 'NO DATA'})
         else:
             socketio.emit('status', {'connected': False, 'message': 'DISCONNECTED'})
     else:
@@ -441,10 +447,15 @@ def handle_telemetry_data(telemetry):
 @socketio.on('get_connection_status')
 def handle_get_connection_status():
     """Handle request for current connection status"""
-    global modbus_control
+    global modbus_control, serial_reader
     if modbus_control:
+        # Use shared status calculation
+        connection_status = modbus_control.calculate_connection_status(
+            serial_reader.last_packet_time if serial_reader else None
+        )
+
         status_data = {
-            'connection_status': 'CONNECTED' if modbus_control.coil[0] else 'DISCONNECTED',
+            'connection_status': connection_status,
             'connect_count': modbus_control.connect_count,
             'disconnect_count': modbus_control.disconnect_count,
             'timestamp': time.time()
@@ -524,10 +535,15 @@ def handle_send_command(data):
 
 def emit_connection_status():
     """Emit connection status to all clients"""
-    global modbus_control
+    global modbus_control, serial_reader
     if modbus_control:
+        # Use shared status calculation
+        connection_status = modbus_control.calculate_connection_status(
+            serial_reader.last_packet_time if serial_reader else None
+        )
+
         status_data = {
-            'connection_status': 'CONNECTED' if modbus_control.coil[0] else 'DISCONNECTED',
+            'connection_status': connection_status,
             'connect_count': modbus_control.connect_count,
             'disconnect_count': modbus_control.disconnect_count,
             'timestamp': time.time()
@@ -658,19 +674,24 @@ def initialize_system():
 def heartbeat_function():
     """Heartbeat function to keep socket.io connections alive"""
     global heartbeat_running, serial_reader, modbus_control
-    
+
     while heartbeat_running:
         try:
             # Send periodic connection status to keep connection alive
             if modbus_control:
+                # Use shared status calculation
+                connection_status = modbus_control.calculate_connection_status(
+                    serial_reader.last_packet_time if serial_reader else None
+                )
+
                 status_data = {
-                    'connection_status': 'CONNECTED' if modbus_control.coil[0] else 'DISCONNECTED',
+                    'connection_status': connection_status,
                     'timestamp': time.time()
                 }
                 socketio.emit('connection_status', status_data, namespace='/')
-            
+
             time.sleep(10)  # Send heartbeat every 10 seconds
-            
+
         except Exception as e:
             print(f"❌ Heartbeat error: {e}")
             time.sleep(5)

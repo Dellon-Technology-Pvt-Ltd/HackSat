@@ -15,6 +15,7 @@ class MissionControlDashboard {
         this.lastUpdateTime = null;
         this.heartbeatInterval = null;
         this.telemetryTimeout = null;
+        this.backendConnectionStatus = 'DISCONNECTED';  // Track backend status
         
         // Antenna tracking animation variables
         this.antennaAnimation = {
@@ -63,6 +64,7 @@ class MissionControlDashboard {
         
         // Initialize dashboard
         this.initializeCharts();
+        this.initializeAntennaCanvas();
         this.startCompassAnimation(0);
         this.setupSocketListeners();
         this.setupRecoveryButton();
@@ -136,6 +138,10 @@ class MissionControlDashboard {
         });
 
         this.socket.on('connection_status', (status) => {
+            this.updateSatelliteConnectionStatus(status);
+        });
+
+        this.socket.on('connection_status_response', (status) => {
             this.updateSatelliteConnectionStatus(status);
         });
 
@@ -380,16 +386,12 @@ class MissionControlDashboard {
     updateTelemetry(data) {
         this.telemetryData = data;
         this.lastUpdateTime = new Date();
-        
+
         console.log('📊 Received telemetry data:', data); // Debug log
-        
+
         // Reset telemetry timeout when data is received
         this.resetTelemetryTimeout();
-        
-        // When telemetry is received, ensure header status is CONNECTED
-        // This fixes the inconsistency where header shows DISCONNECTED but values are updating
-        this.ensureConnectedStatus();
-        
+
         // Update dashboard elements with real telemetry fields
         this.updateMissionTime(data.mission_time || 0);
         this.updateAPID(data.apid || 0);
@@ -399,7 +401,7 @@ class MissionControlDashboard {
         this.updateTemperature(data.temp || 0);
         this.updateHumidity(data.humidity || 0);
         this.updateRadiation(data.radiation || 0);
-        
+
         // Update GPS position with new field names
         this.updatePosition({
             latitude: data.lat || 0,
@@ -407,7 +409,7 @@ class MissionControlDashboard {
             altitude: data.alt || 0,
             speed: data.speed || 0
         });
-        
+
         // Update IMU data
         this.updateIMUData({
             ax: data.acc && data.acc[0] || 0,
@@ -417,7 +419,7 @@ class MissionControlDashboard {
             gy: data.gyro && data.gyro[1] || 0,
             gz: data.gyro && data.gyro[2] || 0
         });
-        
+
         // Update attitude
         this.updateAttitude({
             roll: data.roll || 0,
@@ -431,13 +433,13 @@ class MissionControlDashboard {
             pitch: data.pitch || 0,
             yaw: data.yaw || 0
         });
-        
+
         // Update GPS status
         this.updateGPSStatus(data.fix || 0, data.sat_count || 0, data.hdop || 99.9);
-        
+
         // Update orbit mode
         this.updateOrbitMode(data.orbit || 'UNKNOWN');
-        
+
         // Update antenna tracking with proper data
         this.updateAntennaTracking({
             azimuth: data.azimuth || 0,
@@ -462,11 +464,15 @@ class MissionControlDashboard {
         if (this.telemetryTimeout) {
             clearTimeout(this.telemetryTimeout);
         }
-        
+
         // Set new timeout to detect when telemetry stops
+        // Only override to NO_DATA if backend is not DISCONNECTED
         this.telemetryTimeout = setTimeout(() => {
             console.log('⚠️ Telemetry timeout - no data received for 5 seconds');
-            this.updateSatelliteConnectionStatus({ connection_status: 'NO_DATA' });
+            // Do not override DISCONNECTED with NO_DATA
+            if (this.backendConnectionStatus !== 'DISCONNECTED') {
+                this.updateSatelliteConnectionStatus({ connection_status: 'NO_DATA' });
+            }
             // Request telemetry as fallback
             this.socket.emit('request_telemetry');
         }, 5000); // 5 seconds timeout
@@ -506,47 +512,16 @@ class MissionControlDashboard {
         }
     }
     
-    ensureConnectedStatus() {
-        // Only update header to CONNECTED if communication state is LOCKED or TRACKING
-        // Do not force CONNECTED if the link is LOST or ACQUIRING (Modbus attack/disconnect)
-        const liveIndicator = document.querySelector('.bg-green-500, .bg-red-500, .bg-yellow-500');
-        const liveText = document.querySelector('.text-green-400.text-sm, .text-red-400.text-sm, .text-yellow-400.text-sm');
-        const linkStatusElement = document.getElementById('link-status');
-
-        // Get current communication state from telemetry data
-        const commState = this.telemetryData && this.telemetryData.comm_state;
-
-        // Only show CONNECTED if link is LOCKED or TRACKING
-        if (commState === 'LOCKED' || commState === 'TRACKING') {
-            // Update header to LIVE
-            if (liveIndicator) {
-                liveIndicator.classList.remove('bg-red-500', 'bg-yellow-500');
-                liveIndicator.classList.add('bg-green-500');
-            }
-            if (liveText) {
-                liveText.classList.remove('text-red-400', 'text-yellow-400');
-                liveText.classList.add('text-green-400');
-                liveText.textContent = 'LIVE';
-            }
-
-            // Update communication card to CONNECTED
-            if (linkStatusElement) {
-                linkStatusElement.textContent = 'CONNECTED';
-                linkStatusElement.className = 'text-green-400';
-            }
-        } else {
-            // Link is LOST or ACQUIRING - do not force CONNECTED status
-            console.log(`⚠️ Not forcing CONNECTED - current state: ${commState}`);
-        }
-    }
-
     updateSatelliteConnectionStatus(status) {
         console.log('Satellite connection status:', status);
-        
-        // Update connection indicator in header
-        const liveIndicator = document.querySelector('.bg-green-500');
-        const liveText = document.querySelector('.text-green-400.text-sm');
-        
+
+        // Track backend status to prevent local timeout from overriding DISCONNECTED
+        this.backendConnectionStatus = status.connection_status || 'DISCONNECTED';
+
+        // Update connection indicator in header using stable IDs
+        const liveIndicator = document.getElementById('live-indicator');
+        const liveText = document.getElementById('live-text');
+
         if (status.connection_status === 'CONNECTED') {
             // Show LIVE status
             if (liveIndicator) {
@@ -558,16 +533,16 @@ class MissionControlDashboard {
                 liveText.classList.add('text-green-400');
                 liveText.textContent = 'LIVE';
             }
-            
+
             // Enable all telemetry displays
             this.enableTelemetryDisplays(true);
-            
+
             // Resume antenna tracking
             this.setAntennaTrackingState(true);
-            
+
             // Add success alert
             this.addAlert('Satellite connection established - Telemetry active', 'success');
-            
+
         } else if (status.connection_status === 'NO_DATA') {
             // Show NO DATA status
             if (liveIndicator) {
@@ -579,10 +554,10 @@ class MissionControlDashboard {
                 liveText.classList.add('text-yellow-400');
                 liveText.textContent = 'NO DATA';
             }
-            
+
             // Keep telemetry displays enabled but show warning
             this.addAlert('Connection active but no telemetry data received', 'warning');
-            
+
         } else {
             // Show DISCONNECTED status
             if (liveIndicator) {
@@ -594,18 +569,18 @@ class MissionControlDashboard {
                 liveText.classList.add('text-red-400');
                 liveText.textContent = 'DISCONNECTED';
             }
-            
+
             // Disable all telemetry displays and clear values
             this.enableTelemetryDisplays(false);
             this.clearAllTelemetryValues();
-            
+
             // Stop antenna tracking
             this.setAntennaTrackingState(false);
-            
+
             // Add warning alert
             this.addAlert('Satellite connection lost - Telemetry disabled', 'warning');
         }
-        
+
         // Update connection statistics
         this.updateConnectionStats(status);
     }
@@ -984,6 +959,11 @@ class MissionControlDashboard {
         const canvas = document.getElementById('antennaCanvas');
         if (!canvas) return;
         
+        // Initialize canvas geometry if not already done
+        if (this.antennaAnimation.centerX === 0 || this.antennaAnimation.centerY === 0) {
+            this.initializeAntennaCanvas();
+        }
+        
         const ctx = canvas.getContext('2d');
         const { centerX, centerY, radius } = this.antennaAnimation;
         
@@ -1339,6 +1319,13 @@ class MissionControlDashboard {
         setInterval(() => {
             this.updateConnectionTime();
         }, 1000);
+        
+        // Handle window resize to recalculate canvas geometry
+        window.addEventListener('resize', () => {
+            this.initializeAntennaCanvas();
+            this.drawStaticAntennaTracking();
+            this.drawStaticCompass();
+        });
     }
 
     updateConnectionTime() {
@@ -1505,47 +1492,45 @@ document.addEventListener('DOMContentLoaded', function() {
 
     initializeTelecommandPanel();
     
-    // Add antenna alignment test function to window for manual testing
+    // Add antenna alignment test function to window for manual testing only
+    // Not called automatically - must be invoked via browser console
     window.testAntennaAlignment = function() {
         console.log('🧪 Testing antenna alignment...');
         const dashboard = window.dashboard;
-        
+
         // Test different cardinal directions
         const testAngles = [0, 90, 180, 270]; // North, East, South, West
-        
+
         let testIndex = 0;
         const runTest = () => {
             if (testIndex < testAngles.length) {
                 const angle = testAngles[testIndex];
                 console.log(`🧪 Testing angle: ${angle}° (${['North', 'East', 'South', 'West'][testIndex]})`);
-                
+
                 // Update shared antenna state
                 dashboard.sharedAntennaState.azimuth = angle;
                 dashboard.sharedAntennaState.elevation = 45;
                 dashboard.sharedAntennaState.isTracking = true;
                 dashboard.sharedAntennaState.lastUpdateTime = new Date();
-                
+
                 // Update both widgets
                 dashboard.startAntennaAnimation(angle, 45);
                 dashboard.startCompassAnimation(angle);
-                
+
                 // Update display
                 const azimuthElement = document.getElementById('azimuth');
                 if (azimuthElement) azimuthElement.textContent = angle.toFixed(1) + '°';
-                
+
                 testIndex++;
                 setTimeout(runTest, 2000); // Test each direction for 2 seconds
             } else {
                 console.log('🧪 Antenna alignment test complete');
             }
         };
-        
+
         runTest();
     };
-    
-    // Auto-run test after 3 seconds for verification
-    setTimeout(() => {
-        console.log('🧪 Auto-running antenna alignment test...');
-        window.testAntennaAlignment();
-    }, 3000);
+
+    // DEMO DISABLED: Antenna alignment test no longer auto-runs
+    // To manually test, call window.testAntennaAlignment() in browser console
 });

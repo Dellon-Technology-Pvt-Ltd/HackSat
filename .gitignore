@@ -29,3 +29,31 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.bak
+
+# Local checkpoints and backups
+checkpoints/
+*.backup
+*.backup2
+
+# Local Python environments
+venv/
+venv_windows/
+.venv/
+
+# Generated Python cache
+__pycache__/
+*.py[cod]
+
+# Local checkpoints and backups
+checkpoints/
+*.backup
+*.backup2
+
+# Local Python environments
+venv/
+venv_windows/
+.venv/
+
+# Generated Python cache
+__pycache__/
+*.py[cod]

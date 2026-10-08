@@ -183,11 +183,18 @@ class SerialReader:
                     self.telemetry_health['health_score'] + 5
                 )
 
-                if self.connection_state != 'CONNECTED':
+                # Use shared status calculation from modbus_control
+                if self.modbus_control:
+                    new_state = self.modbus_control.calculate_connection_status(self.last_packet_time)
+                else:
+                    # Fallback if modbus_control not available
+                    new_state = 'CONNECTED'
 
-                    self.connection_state = 'CONNECTED'
+                if self.connection_state != new_state:
 
-                    self._emit_connection_status('CONNECTED')
+                    self.connection_state = new_state
+
+                    self._emit_connection_status(new_state)
 
             else:
 
@@ -200,18 +207,25 @@ class SerialReader:
                     self.telemetry_health['health_score'] - 5
                 )
 
-                time_since_last = (
-                    current_time -
-                    self.telemetry_health['last_valid_time']
-                )
+                # Use shared status calculation from modbus_control
+                if self.modbus_control:
+                    new_state = self.modbus_control.calculate_connection_status(self.last_packet_time)
+                else:
+                    # Fallback if modbus_control not available
+                    time_since_last = (
+                        current_time -
+                        self.telemetry_health['last_valid_time']
+                    )
+                    if time_since_last > 8:
+                        new_state = 'NO_DATA'
+                    else:
+                        new_state = self.connection_state
 
-                if time_since_last > 8:
+                if self.connection_state != new_state:
 
-                    if self.connection_state != 'NO_DATA':
+                    self.connection_state = new_state
 
-                        self.connection_state = 'NO_DATA'
-
-                        self._emit_connection_status('NO_DATA')
+                    self._emit_connection_status(new_state)
 
         except Exception as e:
 
@@ -313,15 +327,6 @@ class SerialReader:
 
                 if not self.serial_conn or not self.serial_conn.is_open:
 
-                    # Check Modbus coil state before allowing reconnection
-                    # If coil[0] == 0 (disconnect attack), block reconnection attempts
-                    if self.modbus_control and not self.modbus_control.coil[0]:
-                        # Connection is explicitly disabled by Modbus
-                        # Do not attempt to reconnect
-                        self.update_telemetry_health(False)
-                        time.sleep(2)
-                        continue
-
                     self.serial_conn = self.connect_serial()
 
                     if not self.serial_conn:
@@ -415,40 +420,50 @@ class SerialReader:
                                 f"Temp={telemetry['temp']:.1f}°C"
                             )
 
-                            try:
+                            # Update health metrics regardless of publication state
+                            self.last_packet_time = time.time()
+                            self.update_telemetry_health(True)
 
-                                if self.telemetry_callback:
+                            # Check if publication is enabled via Modbus coil
+                            publication_enabled = True
+                            if self.modbus_control:
+                                with self.modbus_control.coil_lock:
+                                    publication_enabled = self.modbus_control.coil[0]
 
-                                    self.telemetry_callback(
-                                        telemetry
+                            if publication_enabled:
+                                try:
+
+                                    if self.telemetry_callback:
+
+                                        self.telemetry_callback(
+                                            telemetry
+                                        )
+
+                                    else:
+
+                                        self.socketio.emit(
+                                            'telemetry',
+                                            telemetry,
+                                            namespace='/'
+                                        )
+
+                                    print(
+                                        "CRC OK - "
+                                        "Real telemetry decoded (LORA) - Published"
                                     )
 
-                                else:
+                                except Exception as emit_error:
 
-                                    self.socketio.emit(
-                                        'telemetry',
-                                        telemetry,
-                                        namespace='/'
+                                    print(
+                                        f"❌ Emit error: {emit_error}"
                                     )
-
-                                self.last_packet_time = time.time()
-
+                                    # Continue processing even if emit fails
+                                    # The serial connection should stay alive
+                            else:
                                 print(
                                     "CRC OK - "
-                                    "Real telemetry decoded (LORA)"
+                                    "Real telemetry decoded (LORA) - Publication disabled"
                                 )
-
-                                self.update_telemetry_health(
-                                    True
-                                )
-
-                            except Exception as emit_error:
-
-                                print(
-                                    f"❌ Emit error: {emit_error}"
-                                )
-                                # Continue processing even if emit fails
-                                # The serial connection should stay alive
 
                         else:
 
